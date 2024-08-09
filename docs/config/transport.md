@@ -1,4 +1,4 @@
-# 传输方式
+# 传输方式（uTLS、REALITY）
 
 传输方式（transport）是当前 Xray 节点和其它节点对接的方式。
 
@@ -287,6 +287,12 @@ CipherSuites 用于配置受支持的密码套件列表, 每个套件名称之�
 指纹与行为，可以使用 [Browser Dialer](./transports/websocket.md#browser-dialer)。
 :::
 
+::: tip
+当使用此功能时，TLS 的部分影响TLS指纹的选项将被 utls 库覆盖不再生效，列如ALPN。
+会被传递的参数有
+`"serverName" "allowInsecure" "disableSystemRoot" "pinnedPeerCertificateChainSha256" "masterKeyLog"`
+:::
+
 > `pinnedPeerCertificateChainSha256`: \[string\]
 
 用于指定远程服务器的证书链 SHA256 散列值，使用标准编码格式。仅有当服务器端证书链散列值符合设置项中之一时才能成功建立 TLS 连接。
@@ -349,7 +355,7 @@ CipherSuites 用于配置受支持的密码套件列表, 每个套件名称之�
 
 > `dest` : string
 
-必填，格式同 VLESS `fallbacks` 的 [dest](https://xtls.github.io/config/features/fallback.html#fallbackobject)。
+必填，格式同 VLESS `fallbacks` 的 [dest](./features/fallback.md#fallbackobject)。
 
 ::: warning
 为了伪装的效果考虑，Xray对于鉴权失败（非合法reality请求）的流量，会**直接转发**至 dest.
@@ -359,7 +365,7 @@ CipherSuites 用于配置受支持的密码套件列表, 每个套件名称之�
 
 > `xver` : number
 
-选填，格式同 VLESS `fallbacks` 的 [xver](https://xtls.github.io/config/features/fallback.html#fallbackobject)
+选填，格式同 VLESS `fallbacks` 的 [xver](./features/fallback.md#fallbackobject)
 
 > `serverNames` : \[string\]
 
@@ -389,7 +395,7 @@ CipherSuites 用于配置受支持的密码套件列表, 每个套件名称之�
 
 必填，客户端可用的 `shortId` 列表，可用于区分不同的客户端。
 
-0 到 f，长度为 2 的倍数，长度上限为 16。
+格式要求见 `shortId`
 
 若包含空值，客户端 `shortId` 可为空。
 
@@ -405,15 +411,17 @@ CipherSuites 用于配置受支持的密码套件列表, 每个套件名称之�
 
 > `fingerprint` : string
 
-必填，同 [TLSObject](https://xtls.github.io/config/transport.html#tlsobject)。
+必填，同 [TLSObject](#tlsobject)。
 
 > `shortId` : string
 
 服务端 shortIds 之一。
 
-0 到 f，长度为 2 的倍数，长度上限为 16。
+长度为 8 个字节，即 16 个 0~f 的数字字母，可以小于16个，核心将会自动在后面补0, 但位数必须是**偶数** (因为一个字节有2位16进制数)
 
-若服务端的 `shordIDs` 包含空值，客户端可为空。
+如 `aa1234` 会被自动补全为 `aa12340000000000`, 但是`aaa1234` 则会导致错误。
+
+0也是偶数，所以若服务端的 `shordIDs` 包含空值 `""` ，客户端也可为空。
 
 > `publicKey` : string
 
@@ -430,6 +438,7 @@ CipherSuites 用于配置受支持的密码套件列表, 每个套件名称之�
   "ocspStapling": 3600,
   "oneTimeLoading": false,
   "usage": "encipherment",
+  "buildChain": false,
   "certificateFile": "/path/to/certificate.crt",
   "keyFile": "/path/to/key.key",
   "certificate": [
@@ -525,6 +534,14 @@ OCSP 装订更新，与证书热重载的时间间隔。 单位：秒。默认�
 
 ::: tip TIP 6
 如已经拥有一个域名, 可以使用工具便捷的获取免费第三方证书,如[acme.sh](https://github.com/acmesh-official/acme.sh)
+:::
+
+> `buildChain`: true | false
+
+仅当证书用途为 `issue` 时生效，若值为 `true` ，签发证书时将CA证书嵌入证书链。
+
+::: tip TIP 1
+不应该将根证书嵌入证书链。该选项只适合在签名CA证书为中间证书时启用。
 :::
 
 > `certificateFile`: string

@@ -274,6 +274,12 @@ Specifies the fingerprint of the `TLS Client Hello` message. When empty, fingerp
 This feature only **simulates** the fingerprint of `TLS Client Hello` message, leaving other behaviours the same as vanilla Go TLS. If you want to simulate a browser `TLS` more completely, use the [Browser Dialer](./transports/websocket.md#browser-dialer).
 :::
 
+::: tip
+When using this feature, some TLS options that affect the TLS fingerprint will be overridden by the utls library and will no longer be effective, such as ALPN.
+The parameters that will be passed are
+`"serverName" "allowInsecure" "disableSystemRoot" "pinnedPeerCertificateChainSha256" "masterKeyLog"`
+:::
+
 > `pinnedPeerCertificateChainSha256`: [string]
 
 Specifies the SHA256 hash values of the certificate chain of the remote server, using the standard encoding format. Only when the hash value of the server-side certificate chain matches any of the specified can a TLS connection be successfully established.
@@ -335,11 +341,11 @@ Emits verbose logs when `true`.
 
 > `dest`: string
 
-Required. Same schema as [dest](https://xtls.github.io/config/features/fallback.html#fallbackobject) in VLESS `fallbacks`.
+Required. Same schema as [dest](./features/fallback.md#fallbackobject) in VLESS `fallbacks`.
 
 > `xver`: string
 
-Optional. Same schema as [xver](https://xtls.github.io/config/features/fallback.html#fallbackobject) in VLESS `fallbacks`.
+Optional. Same schema as [xver](./features/fallback.md#fallbackobject) in VLESS `fallbacks`.
 
 > `serverNames`: [string]
 
@@ -404,6 +410,7 @@ The bootstrapping path and query params of the spider. It's recommended to have 
   "ocspStapling": 3600,
   "oneTimeLoading": false,
   "usage": "encipherment",
+  "buildChain": false,
   "certificateFile": "/path/to/certificate.crt",
   "keyFile": "/path/to/key.key",
   "certificate": [
@@ -499,6 +506,14 @@ Use `xray tls cert` to generate self-signed CA certificate.
 
 ::: tip TIP 6
 If you already have a domain name, you can use tools to obtain free third-party certificates easily, such as [acme.sh](https://github.com/acmesh-official/acme.sh).
+:::
+
+> `buildChain`: true | false
+
+Only valid when `usage` is `issue`. When set to `true`, the CA certificate will be appended to leaf certificate as chain during issuing certificates.
+
+::: tip TIP 1
+Root certificates should not be embedded in the certificate chain. This option is only applicable when the signing CA certificate is an intermediate certificate.
 :::
 
 > `certificateFile`: string
